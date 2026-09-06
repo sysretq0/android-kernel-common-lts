@@ -13,6 +13,8 @@ static inline sector_t mb_to_sects(unsigned long mb)
 
 static inline unsigned int null_zone_no(struct nullb_device *dev, sector_t sect)
 {
+	if (WARN_ON_ONCE(!dev->zone_size_sects))
+	return 0;
 	if (dev->zone_size_sects_shift)
 		return sect >> dev->zone_size_sects_shift;
 
@@ -65,6 +67,10 @@ int null_init_zoned_dev(struct nullb_device *dev, struct request_queue *q)
 	sector_t sector = 0;
 	unsigned int i;
 
+	if (!dev->zone_size) {
+		pr_err("zone_size must be non-zero\n");
+		return -EINVAL;
+	}
 	if (dev->zone_size > dev->size) {
 		pr_err("Zone size larger than device capacity\n");
 		return -EINVAL;
